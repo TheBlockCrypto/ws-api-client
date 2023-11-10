@@ -1,0 +1,15 @@
+{
+  "name": "ws-api-client",
+  "version": "1.0.0",
+  "description": "",
+  "main": "ws-api-client.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ws-api-client.js"
+  },
+  "keywords": [],
+  "author": "",
+  "dependencies": {
+    "ws": "^8.14.2"
+  }
+}
