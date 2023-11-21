@@ -90,14 +90,22 @@ async function connect() {
     console.log(`[${time()}] PAYLOAD:`, data.toString())
   })
 
+  ws.on('error', function error(error) {
+    console.log('ERROR:', arguments)
+  })
+
   ws.on('close', async function close(code, reason) {
-    if (code === 401 && credentials.email && credentials.apiKey) {
+    console.log('the code', code, 'the reason', reason.toString())
+
+    if (credentials.email && credentials.apiKey) {
       console.log('Re-authenticating due to 401 Unauthorized error...')
       const newToken = await authenticateAndGetToken(credentials.email, credentials.apiKey)
       fs.writeFileSync('./ws-api-key.txt', newToken)
       connect()
     } else {
+      fs.writeFileSync('./ws-api-key.txt', '')
       console.log(`Disconnected (code: ${code}, reason: ${reason})`)
+      connect()
     }
   })
 }
