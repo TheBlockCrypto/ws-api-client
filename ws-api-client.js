@@ -6,7 +6,7 @@ const WebSocket = require('ws')
 const AUTH_ENDPOINT = 'https://www.theblock.pro/api-public/v1/users/auth'
 //const ENDPOINT = 'wss://www.theblock.pro/api-public/v1/news/live?tokens=btc,eth,aave,ada,algo,bnb,bch,eos,luna' //token filter
 //const ENDPOINT = 'wss://www.theblock.pro/api-public/v1/news/live?priority=1,2,3' //priority filter
-const ENDPOINT = 'wss://www.theblock.pro/api-public/v1/news/live'
+const ENDPOINT = 'wss://www.theblock.co/ws'
 const LAST_PING_TIMEOUT = 60000
 
 const read = readline.createInterface({
@@ -18,6 +18,7 @@ let credentials = { email: '', apiKey: '' }
 
 // Function to authenticate and get token
 async function authenticateAndGetToken(email, apiKey) {
+  return;
   try {
     const response = await axios.post(AUTH_ENDPOINT, { email, apiKey })
     if (response.status === 200 && response.data.data.token) {
@@ -62,7 +63,7 @@ function time() {
 async function connect() {
   let lastPing = Date.now()
   const key = await readApiKey()
-
+  console.log('API key:', key)
   const ws = new WebSocket(ENDPOINT, {
     headers: {
       'x-auth-token': key
@@ -91,7 +92,7 @@ async function connect() {
   })
 
   ws.on('error', function error(error) {
-    console.log('ERROR:', arguments)
+    console.log('ERROR:', JSON.stringify(arguments))
   })
 
   ws.on('close', async function close(code, reason) {
@@ -99,13 +100,13 @@ async function connect() {
 
     if (credentials.email && credentials.apiKey) {
       console.log('Re-authenticating due to 401 Unauthorized error...')
-      const newToken = await authenticateAndGetToken(credentials.email, credentials.apiKey)
-      fs.writeFileSync('./ws-api-key.txt', newToken)
-      connect()
+      //const newToken = await authenticateAndGetToken(credentials.email, credentials.apiKey)
+      //fs.writeFileSync('./ws-api-key.txt', newToken)
+      //connect()
     } else {
-      fs.writeFileSync('./ws-api-key.txt', '')
+      //fs.writeFileSync('./ws-api-key.txt', '')
       console.log(`Disconnected (code: ${code}, reason: ${reason})`)
-      connect()
+      //connect()
     }
   })
 }
