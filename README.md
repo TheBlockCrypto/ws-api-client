@@ -31,15 +31,28 @@ This project is a WebSocket client for the TheBlock Priority API service. It pro
 
 Clone the repository and install dependencies:
 
-### Node
-
 ```bash
 git clone [repository-url]
 cd [repository-name]
+```
+
+### Node
+
+```bash
 yarn install
 ```
 
-## Usage (Node)
+### Pythion
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+## Usage
+
+### Node
 
 ```bash
 yarn start
@@ -48,7 +61,8 @@ yarn start
 ### Python
 
 ```bash
-pip install -r requirements.txt
+python ws-api-client.py
+
 ```
 
 > On first run, the script will prompt for an email and API key. These credentials are used to authenticate with TheBlock Pro API service and receive an authentication token.
