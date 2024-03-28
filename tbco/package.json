@@ -1,0 +1,16 @@
+{
+  "name": "ws-api-client-tbco",
+  "version": "1.0.0",
+  "description": "",
+  "main": "ws-api-client.js",
+  "scripts": {
+    "start": "node ws-api-client.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "luxon": "^3.4.4",
+    "ws": "^8.16.0"
+  }
+}
