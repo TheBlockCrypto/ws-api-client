@@ -6,7 +6,8 @@ const WebSocket = require('ws')
 const AUTH_ENDPOINT = 'https://www.theblock.pro/api-public/v1/users/auth'
 //const ENDPOINT = 'wss://www.theblock.pro/api-public/v1/news/live?tokens=btc,eth,aave,ada,algo,bnb,bch,eos,luna' //token filter
 //const ENDPOINT = 'wss://www.theblock.pro/api-public/v1/news/live?priority=1,2,3' //priority filter
-const ENDPOINT = 'wss://www.theblock.pro/api-public/v1/news/live'
+//const ENDPOINT = 'wss://www.theblock.pro/api-public/v1/news/live'
+const ENDPOINT = 'wss://priority-api.theblock.pro/api-public/v1/news/live?channel=news_published,news_stream,echo'
 const LAST_PING_TIMEOUT = 60000
 
 const read = readline.createInterface({

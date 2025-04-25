@@ -1,11 +1,15 @@
 import asyncio
+import json
 import os
 import requests
 import websockets
-from datetime import datetime
+from datetime import datetime, timezone
 
 AUTH_ENDPOINT = "https://www.theblock.pro/api-public/v1/users/auth"
-ENDPOINT = "wss://www.theblock.pro/api-public/v1/news/live"
+#ENDPOINT = 'wss://www.theblock.pro/api-public/v1/news/live'
+#ENDPOINT = "ws://priority-api.theblockpro.localhost/api-public/v1/news/live"
+ENDPOINT = "wss://priority-api.theblock.pro/api-public/v1/news/live?channel=news_published,news_stream,echo"
+
 LAST_PING_TIMEOUT = 60000
 
 credentials = {"email": "", "api_key": ""}
@@ -43,24 +47,67 @@ async def read_api_key():
 
 
 def current_time():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
 
 async def connect():
-    last_ping = datetime.now().timestamp() * 1000
+    last_ping = datetime.now(timezone.utc).timestamp() * 1000
     key = await read_api_key()
 
-    async with websockets.connect(ENDPOINT, extra_headers={"x-auth-token": key}) as ws:
+    async with websockets.connect(ENDPOINT, extra_headers={"x-auth-token": key}, ping_interval=20, ping_timeout=10) as ws:
         print("Connected to", ENDPOINT)
+
+        # Setup ping handler
+        async def ping_handler():
+            nonlocal last_ping
+            while True:
+                try:
+                    last_ping = datetime.now(timezone.utc).timestamp() * 1000
+                    # Send ping and wait for pong
+                    pong_waiter = await ws.ping()
+                    await pong_waiter
+                    ping_time = datetime.now(timezone.utc).timestamp() * 1000 - last_ping
+                    print(f"[{current_time()}] Ping: {ping_time:.2f}ms")
+                    await asyncio.sleep(30)  # Send ping every 30 seconds
+                except Exception as e:
+                    print(f"Ping error: {e}")
+                    break
+
+        # Start ping handler in background
+        ping_task = asyncio.create_task(ping_handler())
+        
         while True:
             try:
-                if datetime.now().timestamp() * 1000 - last_ping > LAST_PING_TIMEOUT:
-                    print("Connection lost, reconnecting...")
+                # Check for ping timeout
+                if datetime.now(timezone.utc).timestamp() * 1000 - last_ping > LAST_PING_TIMEOUT:
+                    print("Connection lost due to ping timeout, reconnecting...")
+                    ping_task.cancel()
                     await ws.close()
+                    await asyncio.sleep(5)
                     await connect()
+                    return
 
-                message = await ws.recv()
-                print(f"[{current_time()}] PAYLOAD:", message)
+                message_str = await ws.recv()
+                try:
+                    message_data = json.loads(message_str)
+                    
+                    elapsed_time_str = "N/A"
+                    if 'payload' in message_data and 'published' in message_data['payload']:
+                        try:
+                            published_str = message_data['payload']['published']
+                            published_dt = datetime.fromisoformat(published_str)
+                            now_utc = datetime.now(timezone.utc)
+                            elapsed_time = now_utc - published_dt
+                            elapsed_time_str = str(elapsed_time)
+                        except ValueError as e:
+                            print(f"Error parsing published timestamp: {e}")
+                        except KeyError as e:
+                            print(f"Missing key in payload: {e}")
+                    
+                    print(f"[{current_time()}] Elapsed: {elapsed_time_str} | PAYLOAD:", message_str)
+                except json.JSONDecodeError:
+                    # Handle non-JSON messages
+                    print(f"[{current_time()}] Non-JSON message received: {message_str}")
 
             except websockets.exceptions.ConnectionClosed as e:
                 print("ERROR:", e)
@@ -72,11 +119,14 @@ async def connect():
                     with open("./ws-api-key.txt", "w") as file:
                         file.write(new_token)
                     await connect()
+                    return
                 else:
                     with open("./ws-api-key.txt", "w") as file:
                         file.write("")
                     print(f"Disconnected (code: {e.code}, reason: {e.reason})")
+                    await asyncio.sleep(5)
                     await connect()
+                    return
 
 
 asyncio.run(connect())
